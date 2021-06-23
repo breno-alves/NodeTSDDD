@@ -1,0 +1,27 @@
+version: '3.3'
+
+services:
+  nodetsddd_db:
+    container_name: 'nodetsddd_db'
+    image: postgres
+    environment:
+      POSTGRES_DB: nodetsddd_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+  nodetsddd_test:
+    container_name: 'nodetsddd_test'
+    image: postgres
+    environment:
+      POSTGRES_DB: nodetsddd_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - 5433:5432
+
+volumes:
+  pg_data:
