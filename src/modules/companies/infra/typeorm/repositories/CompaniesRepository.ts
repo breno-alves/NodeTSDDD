@@ -14,6 +14,10 @@ export default class CompaniesRepository implements ICompaniesRepository {
     return this.ormRepository.findOne(id);
   }
 
+  public async find(attributes: Partial<Company>): Promise<Company> {
+    return this.ormRepository.findOne({ where: { ...attributes } });
+  }
+
   public async create(data: CreateCompanyDTO): Promise<Company> {
     const company = this.ormRepository.create(data);
     await this.save(company);

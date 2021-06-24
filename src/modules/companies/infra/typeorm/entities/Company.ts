@@ -23,7 +23,7 @@ export default class Company {
   })
   zipcode: string;
 
-  @Column()
+  @Column({ nullable: true })
   website: string;
 
   @CreateDateColumn({ name: 'created_at' })

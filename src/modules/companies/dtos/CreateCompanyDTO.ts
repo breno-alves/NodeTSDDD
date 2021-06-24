@@ -1,5 +1,5 @@
 export default interface CreateCompanyDTO {
-  nome: string;
+  name: string;
   zipcode: string;
   website?: string;
 }
