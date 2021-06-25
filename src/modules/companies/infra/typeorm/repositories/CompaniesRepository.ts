@@ -1,6 +1,6 @@
 import CreateCompanyDTO from '@modules/companies/dtos/CreateCompanyDTO';
 import ICompaniesRepository from '@modules/companies/repositories/ICompaniesRepository';
-import { getRepository, Repository } from 'typeorm';
+import { getRepository, Repository, getManager } from 'typeorm';
 import Company from '../entities/Company';
 
 export default class CompaniesRepository implements ICompaniesRepository {
@@ -25,6 +25,8 @@ export default class CompaniesRepository implements ICompaniesRepository {
   }
 
   public async save(company: Company): Promise<Company> {
-    return this.ormRepository.save(company);
+    return getManager().transaction(transactionalEntityManager =>
+      transactionalEntityManager.save(company),
+    );
   }
 }
