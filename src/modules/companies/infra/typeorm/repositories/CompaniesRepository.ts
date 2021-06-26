@@ -23,6 +23,10 @@ export default class CompaniesRepository implements ICompaniesRepository {
     this.ormRepository = getRepository(Company);
   }
 
+  public async findAllAndCount(): Promise<[Company[], number]> {
+    return this.ormRepository.findAndCount();
+  }
+
   public async findById(id: string): Promise<Company | null> {
     return this.ormRepository.findOne(id);
   }

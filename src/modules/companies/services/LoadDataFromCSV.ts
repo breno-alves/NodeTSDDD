@@ -1,7 +1,7 @@
 import { injectable, inject } from 'tsyringe';
 import { createReadStream } from 'fs';
 import { Transform } from 'stream';
-import { resolve } from 'path';
+import { resolve as resolvePath } from 'path';
 import ICompaniesRepository from '../repositories/ICompaniesRepository';
 
 interface IValidatedObject {
@@ -42,38 +42,61 @@ export default class LoadDataFromCSV {
     next(null, validatedObjects);
   }
 
-  private pushDataToDatabase(companiesRepository: ICompaniesRepository) {
-    return (chunk: Array<IValidatedObject>, _, next) => {
-      Promise.all(
-        chunk.map(async ({ name, zipcode }) => {
-          const companyExists = await companiesRepository.find({
-            name,
-            zipcode,
-          });
+  private async pushDataToDatabase(
+    companiesRepository: ICompaniesRepository,
+    chunk,
+  ) {
+    return Promise.all(
+      chunk.map(async ({ name, zipcode }) => {
+        const companyExists = await companiesRepository.find({
+          name: name.toUpperCase(),
+          zipcode,
+        });
 
-          if (!companyExists) {
-            await companiesRepository.create({ name, zipcode });
-          }
-        }),
-      ).then(next(null, chunk));
-    };
+        if (!companyExists) {
+          await companiesRepository.create({ name, zipcode });
+        }
+      }),
+    );
   }
 
   public async execute(): Promise<void> {
     const readStream = createReadStream(
-      resolve(__dirname, '..', '..', '..', 'shared', 'seed', 'q1_catalog.csv'),
+      resolvePath(
+        __dirname,
+        '..',
+        '..',
+        '..',
+        'shared',
+        'seed',
+        'q1_catalog.csv',
+      ),
       { encoding: 'utf8' },
     );
-    readStream
-      .pipe(new Transform({ objectMode: true, transform: this.dataToObjects }))
-      .pipe(
-        new Transform({ objectMode: true, transform: this.validateObjects }),
-      )
-      .pipe(
-        new Transform({
-          objectMode: true,
-          transform: this.pushDataToDatabase(this.companiesRepository),
-        }),
-      );
+
+    return new Promise((resolve, reject) => {
+      const promises = [];
+
+      readStream
+        .pipe(
+          new Transform({ objectMode: true, transform: this.dataToObjects }),
+        )
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: this.validateObjects,
+          }),
+        )
+        .on('data', row => {
+          promises.push(this.pushDataToDatabase(this.companiesRepository, row));
+        })
+        .on('error', err => {
+          reject(err);
+        })
+        .on('end', async () => {
+          await Promise.all(promises);
+          resolve();
+        });
+    });
   }
 }
