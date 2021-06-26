@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { validateOrReject, MaxLength } from 'class-validator';
+import { validateOrReject, MaxLength, MinLength } from 'class-validator';
 
 @Entity('companies')
 export default class Company {
@@ -18,6 +18,9 @@ export default class Company {
   name: string;
 
   @Column({ length: 5 })
+  @MinLength(5, {
+    message: 'Zipcode too short!',
+  })
   @MaxLength(5, {
     message: 'Zipcode too long!',
   })
@@ -35,6 +38,12 @@ export default class Company {
   @BeforeInsert()
   @BeforeUpdate()
   private validate(): Promise<void> {
+    this.transformData();
     return validateOrReject(this);
+  }
+
+  private transformData(): void {
+    this.website = this.website?.toLowerCase();
+    this.name = this.name.toUpperCase();
   }
 }
