@@ -1,7 +1,20 @@
 import CreateCompanyDTO from '@modules/companies/dtos/CreateCompanyDTO';
 import ICompaniesRepository from '@modules/companies/repositories/ICompaniesRepository';
-import { getRepository, Repository, getManager } from 'typeorm';
+import {
+  getRepository,
+  Repository,
+  getManager,
+  Like,
+  FindOperator,
+} from 'typeorm';
 import Company from '../entities/Company';
+
+interface CompanyFindWhere {
+  id?: string;
+  name?: string | FindOperator<string>;
+  zipcode?: string;
+  website?: string;
+}
 
 export default class CompaniesRepository implements ICompaniesRepository {
   private ormRepository: Repository<Company>;
@@ -15,7 +28,15 @@ export default class CompaniesRepository implements ICompaniesRepository {
   }
 
   public async find(attributes: Partial<Company>): Promise<Company> {
-    return this.ormRepository.findOne({ where: { ...attributes } });
+    const where: CompanyFindWhere = {
+      ...attributes,
+    };
+
+    if (where.name) {
+      where.name = Like(`%${attributes.name}%`);
+    }
+
+    return this.ormRepository.findOne({ where });
   }
 
   public async create(data: CreateCompanyDTO): Promise<Company> {

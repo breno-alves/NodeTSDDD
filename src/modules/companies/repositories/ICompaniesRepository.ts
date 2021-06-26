@@ -5,5 +5,5 @@ export default interface ICompaniesRepository {
   create(data: CreateCompanyDTO): Promise<Company>;
   save(company: Company): Promise<Company>;
   findById(id: string): Promise<Company | null>;
-  find(attributes: Partial<Company>): Promise<Company>;
+  find(attributes: Partial<Company>): Promise<Company | undefined>;
 }

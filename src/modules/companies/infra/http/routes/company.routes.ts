@@ -8,6 +8,8 @@ const companyRouter = Router();
 
 const upload = multer(uploadConfig);
 
+companyRouter.get('/find', new CompanyController().find);
+
 companyRouter.post('/load', new CompanyController().loadCSV);
 
 companyRouter.post(
