@@ -2,7 +2,6 @@ import connection from '@shared/utils/connection';
 import request from 'supertest';
 import app from '@shared/infra/http/server';
 import CompaniesRepository from '@modules/companies/infra/typeorm/repositories/CompaniesRepository';
-import fs from 'fs';
 import path from 'path';
 
 describe('Companies', () => {
@@ -128,6 +127,79 @@ describe('Companies', () => {
       const [companiesNew, countNew] = await repo.findAllAndCount();
 
       expect(companiesNew.length).toEqual(companies.length);
+    });
+  });
+
+  describe('Find', () => {
+    let companies = [];
+
+    beforeAll(async () => {
+      await connection.clear();
+      await request(app).post(`/company/load`);
+
+      const repo = new CompaniesRepository();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [companiesDB, _] = await repo.findAllAndCount();
+      companies = companiesDB;
+    });
+
+    it('Should find company with full name', async () => {
+      const response = await request(app).get(
+        `/company/find?zipcode=${companies[0].zipcode}&name=${companies[0].name}`,
+      );
+
+      expect(response.status).toEqual(200);
+      expect(response.body.id).not.toBeNull();
+      expect(companies[0].id).toEqual(response.body.id);
+      expect(companies[0].name).toEqual(response.body.name);
+    });
+
+    it('Should find company with incompleted name', async () => {
+      const companyFind = companies.find(
+        ({ name }) => name.split(' ').length > 1,
+      );
+
+      const splitedName = companyFind.name.split(' ');
+      const responseFirst = await request(app).get(
+        `/company/find?zipcode=${companyFind.zipcode}&name=${splitedName[0]}`,
+      );
+      expect(responseFirst.body.id).not.toBeNull();
+      expect(responseFirst.body.name.includes(splitedName[0]));
+
+      const responseSecond = await request(app).get(
+        `/company/find?zipcode=${companyFind.zipcode}&name=${splitedName[1]}`,
+      );
+
+      expect(responseSecond.body.id).not.toBeNull();
+      expect(responseSecond.body.name.includes(splitedName[1]));
+      expect(responseFirst.body.id).toEqual(responseSecond.body.id);
+    });
+
+    it('Should not find company with invalid name', async () => {
+      const response = await request(app).get(
+        `/company/find?zipcode=${companies[0].zipcode}&name=aaaaaaaaaaaaaa}`,
+      );
+
+      expect(response.status).toEqual(200);
+      expect(response.body.message).toEqual('Cannot find company');
+    });
+
+    it('Should receive error when name is not informed', async () => {
+      const response = await request(app).get(
+        `/company/find?zipcode=${companies[0].zipcode}}`,
+      );
+
+      expect(response.status).toEqual(400);
+      expect(response.body.error[0]).toEqual('name is a required field');
+    });
+
+    it('Should receive error when zipcode is not informed', async () => {
+      const response = await request(app).get(
+        `/company/find?name=${companies[0].name}}`,
+      );
+
+      expect(response.status).toEqual(400);
+      expect(response.body.error[0]).toEqual('zipcode is a required field');
     });
   });
 });

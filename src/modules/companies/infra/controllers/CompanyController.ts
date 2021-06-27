@@ -3,13 +3,14 @@ import { container } from 'tsyringe';
 import LoadDataFromCSV from '@modules/companies/services/LoadDataFromCSV';
 import MergeDataFromCSV from '@modules/companies/services/MergeDataFromCSV';
 import FindCompany from '@modules/companies/services/FindCompany';
+import { controllerValidatorFind } from '@modules/companies/infra/validators/CompanyControllerValidators';
 
 export default class CompanyController {
   public async loadCSV(_: Request, response: Response): Promise<Response> {
     const loader = container.resolve(LoadDataFromCSV);
     await loader.execute();
 
-    return response.json({ ok: true });
+    return response.status(200).json({ ok: true });
   }
 
   public async integrateCSV(
@@ -19,15 +20,22 @@ export default class CompanyController {
     const merger = container.resolve(MergeDataFromCSV);
     await merger.execute(request.file.path);
 
-    return response.json({ ok: true });
+    return response.status(200).json({ ok: true });
   }
 
   public async find(request: Request, response: Response): Promise<Response> {
-    const { zipcode, name } = request.query as any;
+    try {
+      const { zipcode, name } = request.query as any;
+      await controllerValidatorFind({ zipcode, name });
 
-    const finder = container.resolve(FindCompany);
-    const company = await finder.execute(zipcode, name);
+      const finder = container.resolve(FindCompany);
+      const company = await finder.execute(zipcode, name);
 
-    return response.json(company);
+      return response
+        .status(200)
+        .json(company || { message: 'Cannot find company' });
+    } catch (err) {
+      return response.status(400).json({ error: err.errors });
+    }
   }
 }
