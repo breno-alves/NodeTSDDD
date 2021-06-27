@@ -45,36 +45,48 @@ export default class MergeDataFromCSV {
     next(null, validatedObjects);
   }
 
-  private pushDataToDatabase(companiesRepository: ICompaniesRepository) {
-    return (chunk: Array<IValidatedObject>, _, next) => {
-      Promise.all(
-        chunk.map(async ({ name, zipcode, website }) => {
-          const companyExists = await companiesRepository.find({
-            name,
-            zipcode,
-          });
+  private pushDataToDatabase(companiesRepository: ICompaniesRepository, chunk) {
+    return Promise.all(
+      chunk.map(async ({ name, zipcode, website }) => {
+        const companyExists = await companiesRepository.find({
+          name,
+          zipcode,
+        });
 
-          if (companyExists) {
-            companyExists.website = website;
-            await companiesRepository.save(companyExists);
-          }
-        }),
-      ).then(next(null, chunk));
-    };
+        if (companyExists) {
+          companyExists.website = website;
+          await companiesRepository.save(companyExists);
+        }
+      }),
+    );
   }
 
   public async execute(filePath: string): Promise<void> {
     const readStream = createReadStream(filePath, { encoding: 'utf8' });
-    readStream
-      .pipe(new Transform({ objectMode: true, transform: this.dataToObjects }))
-      .pipe(
-        new Transform({ objectMode: true, transform: this.validateObjects }),
-      )
-      .pipe(
-        new Transform({
-          objectMode: true,
-          transform: this.pushDataToDatabase(this.companiesRepository),
-        }),
-      );
+
+    return new Promise((resolve, reject) => {
+      const promises = [];
+
+      readStream
+        .pipe(
+          new Transform({ objectMode: true, transform: this.dataToObjects }),
+        )
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: this.validateObjects,
+          }),
+        )
+        .on('data', row => {
+          promises.push(this.pushDataToDatabase(this.companiesRepository, row));
+        })
+        .on('error', err => {
+          reject(err);
+        })
+        .on('end', async () => {
+          await Promise.all(promises);
+          resolve();
+        });
+    });
   }
 }

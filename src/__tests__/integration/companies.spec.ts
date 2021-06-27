@@ -82,9 +82,15 @@ describe('Companies', () => {
   });
 
   describe('Integrate', () => {
-    it.skip('Should integrate database data with integration data', async () => {
+    beforeEach(async () => {
+      await connection.clear();
+    });
+
+    it('Should integrate database data with integration data', async () => {
+      await request(app).post(`/company/load`);
+
       await request(app)
-        .post(`/company/load`)
+        .post(`/company/integrate`)
         .set('Content-type', 'multipart/form-data')
         .attach(
           'csv',
@@ -103,6 +109,25 @@ describe('Companies', () => {
       }, []);
 
       expect(websites.length).toBeGreaterThan(0);
+    });
+
+    it('Should discart data if company not in database', async () => {
+      await request(app).post(`/company/load`);
+      const repo = new CompaniesRepository();
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [companies, count] = await repo.findAllAndCount();
+
+      await request(app)
+        .post(`/company/integrate`)
+        .set('Content-type', 'multipart/form-data')
+        .attach(
+          'csv',
+          path.resolve(__dirname, '..', 'seeds', 'q2_clientData.csv'),
+        );
+
+      const [companiesNew, countNew] = await repo.findAllAndCount();
+
+      expect(companiesNew.length).toEqual(companies.length);
     });
   });
 });
