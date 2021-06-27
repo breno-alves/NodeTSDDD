@@ -6,8 +6,11 @@ start:
 check:
 	npm run test:integration
 
+# Run migration
+migration:
+	npm run typeorm migrations:run
+
 # Initial setup
 setup:
 	npm i
 	docker-compose up -d
-	npm run typeorm migrations:run
