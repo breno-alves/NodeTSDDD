@@ -128,6 +128,23 @@ describe('Companies', () => {
 
       expect(companiesNew.length).toEqual(companies.length);
     });
+
+    it('Should receive error when trying to upload invalid file type', async () => {
+      const response = await request(app)
+        .post(`/company/integrate`)
+        .set('Content-type', 'multipart/form-data')
+        .attach('csv', path.resolve(__dirname, '..', 'seeds', 'favicon.png'));
+
+      expect(response.status).toEqual(400);
+      expect(response.body.error[0]).toEqual('Invalid file type');
+    });
+
+    it('Should receive error when attach no file', async () => {
+      const response = await request(app).post(`/company/integrate`);
+
+      expect(response.status).toEqual(400);
+      expect(response.body.error[0]).toEqual('A CSV file is required');
+    });
   });
 
   describe('Find', () => {

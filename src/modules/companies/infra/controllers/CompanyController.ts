@@ -3,7 +3,10 @@ import { container } from 'tsyringe';
 import LoadDataFromCSV from '@modules/companies/services/LoadDataFromCSV';
 import MergeDataFromCSV from '@modules/companies/services/MergeDataFromCSV';
 import FindCompany from '@modules/companies/services/FindCompany';
-import { controllerValidatorFind } from '@modules/companies/infra/validators/CompanyControllerValidators';
+import {
+  controllerValidatorFind,
+  controllerValidatorIntegrate,
+} from '@modules/companies/infra/validators/CompanyControllerValidators';
 
 export default class CompanyController {
   public async loadCSV(_: Request, response: Response): Promise<Response> {
@@ -17,10 +20,16 @@ export default class CompanyController {
     request: Request,
     response: Response,
   ): Promise<Response> {
-    const merger = container.resolve(MergeDataFromCSV);
-    await merger.execute(request.file.path);
+    try {
+      await controllerValidatorIntegrate(request);
 
-    return response.status(200).json({ ok: true });
+      const merger = container.resolve(MergeDataFromCSV);
+      await merger.execute(request.file.path);
+
+      return response.status(200).json({ ok: true });
+    } catch (err) {
+      return response.status(400).json({ error: err.errors });
+    }
   }
 
   public async find(request: Request, response: Response): Promise<Response> {

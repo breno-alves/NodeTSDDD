@@ -7,3 +7,14 @@ export const controllerValidatorFind = async (obj: any): Promise<void> => {
   });
   await schema.validate(obj);
 };
+
+export const controllerValidatorIntegrate = async (obj: any): Promise<void> => {
+  const schema = Yup.object().shape({
+    file: Yup.mixed()
+      .required('A CSV file is required')
+      .test('fileFormat', 'Invalid file type', value => {
+        return value && ['text/csv'].includes(value.mimetype);
+      }),
+  });
+  await schema.validate(obj);
+};
