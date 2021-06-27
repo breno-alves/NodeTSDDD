@@ -66,3 +66,9 @@ Docker-compose file contains two containers:
 ### Runnning docker-compose
 
     docker-compose up -d
+
+## Endpoints
+
+- /company/load
+- /company/integrate
+- /company/find?zipcode={zipcode}&name={name}
