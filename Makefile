@@ -10,3 +10,4 @@ check:
 setup:
 	npm i
 	docker-compose up -d
+	npm run typeorm migrations:run
