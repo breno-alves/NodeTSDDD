@@ -8,7 +8,7 @@ check:
 
 # Run migration
 migration:
-	npm run typeorm migrations:run
+	npm run typeorm migration:run
 
 # Initial setup
 setup:

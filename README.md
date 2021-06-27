@@ -14,6 +14,8 @@ NodeDDD's API
 ```
 make setup
 
+make migration
+
 make start
 ```
 
@@ -31,7 +33,7 @@ make start
 
 ## Run migrations
 
-    npm run typeorm migrations:run
+    npm run typeorm migration:run
 
 ---
 
